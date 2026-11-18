@@ -2,7 +2,7 @@ import { StatusCodes } from "http-status-codes";
 import { registerService, loginService } from "../service/auth.service";
 
 /**
- * Handles user registration requests.
+ * Handles user 
  *
  * @param {import('express').Request} req - The Express request object.
  * @param {import('express').Response} res - The Express response object.

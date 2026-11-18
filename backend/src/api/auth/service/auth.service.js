@@ -16,7 +16,7 @@ if (!JWT_SECRET) {
 const normalizeEmail = (email) => email.trim().toLowerCase();
 
 /**
- * Checks if a user exists by email.
+ * Checks if a user 
  *
  * @param {string} email - The email to check.
  * @returns {Promise<boolean>} True if the user exists, false otherwise.

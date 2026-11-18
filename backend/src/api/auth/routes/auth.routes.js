@@ -11,7 +11,7 @@ import {
 const router = express.Router();
 
 /**
- * @route POST /api/auth/register
+ * @route POST 
  * @desc Register a new user
  * @access Public
  */
