@@ -36,37 +36,47 @@ function normalizeWhitespace(value) {
  */
 export function normalizeQuestionText({ title }) {
   return normalizeWhitespace(`${title || ""}`.normalize("NFKC").toLowerCase());
-}   
+}
 
+/**
+ * Calculate cosine similarity between two embedding vectors.
+ * Formula: cos(θ) = (A · B) / (||A|| × ||B||)
+ *
+ * @param {number[]} vectorA - First embedding vector
+ * @param {number[]} vectorB - Second embedding vector
+ * @returns {number} Similarity score between -1 and 1 (typically 0 to 1 for embeddings)
+ * @throws {Error} If vectors have different lengths
+ */
+export function calculateCosineSimilarity(vectorA, vectorB) {
+  // Validate vectors have same length
+  if (vectorA.length !== vectorB.length) {
+    throw new Error(
+      `Vectors must have the same length. Got ${vectorA.length} and ${vectorB.length}`,
+    );
+  }
+  let magnitudeA = 0;
+  let dotProduct = 0;
+  for (let i = 0; i < vectorA.length; i++) {
+    dotProduct += vectorA[i] * vectorB[i];
+    magnitudeA += vectorA[i] * vectorA[i];
+  }
+  magnitudeA = Math.sqrt(magnitudeA);
 
+  // Calculate magnitude of vectorB (square root of sum of squares)
+  let magnitudeB = 0;
+  for (let i = 0; i < vectorB.length; i++) {
+    magnitudeB += vectorB[i] * vectorB[i];
+  }
+  magnitudeB = Math.sqrt(magnitudeB);
 
+  // Handle edge case: return 0 if either magnitude is 0
+  if (magnitudeA === 0 || magnitudeB === 0) {
+    return 0;
+  }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  // Return dot product divided by product of magnitudes
+  return dotProduct / (magnitudeA * magnitudeB);
+}
 
 /**
  * Generate a normalized embedding for the provided question text using the Gemini API.
@@ -115,13 +125,13 @@ export async function generateQuestionEmbedding(sourceText, options = {}) {
  */
 function validateEmbedding(embedding) {
   if (!Array.isArray(embedding)) {
-    throw new Error('Embedding must be an array');
+    throw new Error("Embedding must be an array");
   }
   if (embedding.length === 0) {
-    throw new Error('Embedding cannot be empty');
+    throw new Error("Embedding cannot be empty");
   }
-  if (!embedding.every(v => typeof v === 'number' && !isNaN(v))) {
-    throw new Error('Embedding must contain only valid numbers');
+  if (!embedding.every((v) => typeof v === "number" && !isNaN(v))) {
+    throw new Error("Embedding must contain only valid numbers");
   }
 }
 
@@ -140,10 +150,10 @@ export async function storeQuestionVector({
   questionId,
   sourceText,
   embedding = [],
-  status = 'ready',
+  status = "ready",
 }) {
   // Handle empty embeddings for failed status
-  if (status === 'failed' || !embedding || embedding.length === 0) {
+  if (status === "failed" || !embedding || embedding.length === 0) {
     const sql = `
       INSERT INTO question_vectors (question_id, source_text, embedding, status)
       VALUES (?, ?, ?, ?)
@@ -157,7 +167,7 @@ export async function storeQuestionVector({
       questionId,
       sourceText,
       JSON.stringify([]),
-      'failed',
+      "failed",
     ]);
     return;
   }
@@ -182,14 +192,331 @@ export async function storeQuestionVector({
   try {
     await safeExecute(sql, [questionId, sourceText, embeddingJson, status]);
   } catch (error) {
-    console.error('=== MYSQL UPSERT ERROR ===');
-    console.error('Operation: storeQuestionVector');
+    console.error("=== MYSQL UPSERT ERROR ===");
+    console.error("Operation: storeQuestionVector");
     console.error(`Question ID: ${questionId}`);
     console.error(`Embedding length: ${embedding.length}`);
     console.error(`Status: ${status}`);
-    console.error('SQL:', sql.trim().replace(/\s+/g, ' '));
-    console.error('Error:', error);
-    console.error('===========================');
+    console.error("SQL:", sql.trim().replace(/\s+/g, " "));
+    console.error("Error:", error);
+    console.error("===========================");
     throw error;
   }
+}
+
+/**
+ * Retrieve all ready embeddings from MySQL question_vectors table.
+ * Parses JSON embedding strings to JavaScript arrays and validates them.
+ * Invalid embeddings are skipped with a warning logged.
+ *
+ * @returns {Promise<Array<{questionId: number, embedding: number[]}>>} Array of question embeddings
+ */
+async function retrieveReadyEmbeddings() {
+  // Query question_vectors table with status='ready' filter
+  const sql = `
+    SELECT question_id, embedding
+    FROM question_vectors
+    WHERE status = ?
+  `;
+
+  try {
+    const rows = await safeExecute(sql, ["ready"]);
+
+    // Parse and validate embeddings
+    const embeddings = [];
+    for (const row of rows) {
+      try {
+        // The database driver might already parse JSON columns into objects/arrays.
+        // If it's already an array, use it directly; otherwise, parse it.
+        const embedding =
+          typeof row.embedding === "string"
+            ? JSON.parse(row.embedding)
+            : row.embedding;
+
+        // Add valid embedding to results
+        embeddings.push({
+          questionId: row.question_id,
+          embedding: embedding,
+        });
+      } catch (parseError) {
+        console.warn(
+          `Skipping question ${row.question_id}: failed to parse embedding JSON`,
+          parseError,
+        );
+        continue;
+      }
+    }
+
+    return embeddings;
+  } catch (error) {
+    console.error("=== MYSQL RETRIEVE EMBEDDINGS ERROR ===");
+    console.error("Operation: retrieveReadyEmbeddings");
+    console.error("Error:", error);
+    console.error("=========================================");
+    throw error;
+  }
+}
+
+/**
+ * Find similar questions by generating an embedding for the provided text and searching MySQL.
+ * @param {Object} params - Search parameters.
+ * @param {string} params.sourceText - The text to search for similar questions.
+ * @param {number} [params.threshold] - Minimum similarity score threshold.
+ * @param {number} [params.k] - Maximum number of results to return.
+ * @returns {Promise<Object>} The generated embedding and similar questions.
+ */
+export async function findSimilarQuestionsByText({ sourceText, threshold, k }) {
+  // Normalize parameters
+  const normalizedK = k || RECOMMEND_K;
+  const normalizedThreshold = threshold || RECOMMEND_THRESHOLD;
+  // Use RETRIEVAL_QUERY task type when searching against stored documents
+  let embeddingResult;
+  try {
+    embeddingResult = await generateQuestionEmbedding(sourceText, {
+      taskType: "RETRIEVAL_QUERY",
+    });
+  } catch (error) {
+    console.error("=== GEMINI API ERROR DURING SEARCH ===");
+    console.error("Operation: findSimilarQuestionsByText");
+    console.error("Search text:", sourceText);
+    console.error("Error:", error);
+    console.error("======================================");
+    throw new ServiceUnavailableError(
+      "Failed to generate embedding for search query. Please try again later.",
+    );
+  }
+
+  const queryEmbedding = embeddingResult.embedding; // [0.0123213, -0.12324, .....]
+
+  // Retrieve all ready embeddings from MySQL
+  let storedEmbeddings;
+  try {
+    storedEmbeddings = await retrieveReadyEmbeddings();
+  } catch (error) {
+    console.error("=== DATABASE ERROR DURING SEARCH ===");
+    console.error("Operation: findSimilarQuestionsByText");
+    console.error("Search text:", sourceText);
+    console.error("Error:", error);
+    console.error("====================================");
+    throw error;
+  }
+
+  // Calculate cosine similarity for each stored embedding
+  const similarities = [];
+  for (const stored of storedEmbeddings) {
+    try {
+      const score = calculateCosineSimilarity(queryEmbedding, stored.embedding);
+
+      // Filter by threshold
+      if (score >= normalizedThreshold) {
+        similarities.push({
+          questionId: stored.questionId,
+          score: score,
+        });
+      }
+    } catch (error) {
+      console.warn(
+        `Failed to calculate similarity for question ${stored.questionId}:`,
+        error.message,
+      );
+      continue;
+    }
+  }
+
+  // sort by score descending
+  similarities.sort((a, b) => b.score - a.score);
+  // Limit to top k results
+  const topResults = similarities.slice(0, normalizedK);
+
+  if (topResults.length === 0) {
+    return {
+      ...embeddingResult,
+      similarQuestions: [],
+    };
+  }
+
+  // Fetch question details using IN clause
+  const questionIds = topResults.map((r) => r.questionId);
+  const placeholders = questionIds.map(() => "?").join(",");
+
+  const sql = `
+    SELECT
+      q.question_id AS questionId,
+      q.question_hash AS questionHash,
+      q.title,
+      q.content,
+      q.created_at AS createdAt,
+      q.updated_at AS updatedAt,
+      u.user_id AS userId,
+      u.first_name AS firstName,
+      u.last_name AS lastName,
+      COUNT(DISTINCT a.answer_id) AS answerCount
+    FROM questions q
+    JOIN users u ON u.user_id = q.user_id
+    LEFT JOIN answers a ON a.question_id = q.question_id
+    WHERE q.question_id IN (${placeholders})
+    GROUP BY q.question_id, u.user_id
+  `;
+
+  let rows;
+  try {
+    rows = await safeExecute(sql, questionIds);
+  } catch (error) {
+    console.error("=== DATABASE ERROR FETCHING QUESTION DETAILS ===");
+    console.error("Operation: findSimilarQuestionsByText - fetch details");
+    console.error("Question IDs:", questionIds);
+    console.error("Error:", error);
+    console.error("================================================");
+    throw error;
+  }
+
+  // Map MySQL results to question objects
+  const questionMap = {};
+  rows.forEach((row) => {
+    questionMap[String(row.questionId)] = {
+      id: row.questionId,
+      questionHash: row.questionHash,
+      title: row.title,
+      content: row.content,
+      answerCount: row.answerCount,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      author: {
+        id: row.userId,
+        firstName: row.firstName,
+        lastName: row.lastName,
+      },
+    };
+  });
+
+  // Return results with scores, preserving sort order
+  const similarQuestions = topResults
+    .filter((result) => questionMap[String(result.questionId)])
+    .map((result) => ({
+      score: Number(result.score.toFixed(6)),
+      ...questionMap[String(result.questionId)],
+    }));
+
+  return {
+    ...embeddingResult,
+    similarQuestions,
+  };
+}
+
+/**
+ * Find similar questions using the pre-calculated embedding of an existing question from MySQL.
+ * @param {Object} params - Search parameters.
+ * @param {number|string} params.questionId - The ID of the question to find similarities for.
+ * @param {number} [params.threshold] - Minimum similarity score threshold.
+ * @param {number} [params.k] - Maximum number of results to return.
+ * @returns {Promise<Array<Object>>} A list of similar questions.
+ */
+export async function findSimilarQuestionsByQuestionId({
+  questionId,
+  threshold,
+  k,
+}) {
+  const normalizedK = k > 0 ? Math.min(k, 20) : RECOMMEND_K;
+  const normalizedThreshold =
+    threshold >= 0 && threshold <= 1 ? threshold : RECOMMEND_THRESHOLD;
+
+  const sourceRows = await safeExecute(
+    "SELECT embedding, status FROM question_vectors WHERE question_id = ?",
+    [questionId],
+  );
+  if (sourceRows.length === 0 || sourceRows[0].status !== "ready") {
+    return [];
+  }
+
+  let sourceEmbedding;
+  try {
+    sourceEmbedding =
+      typeof sourceRows[0].embedding === "string"
+        ? JSON.parse(sourceRows[0].embedding)
+        : sourceRows[0].embedding;
+    validateEmbedding(sourceEmbedding);
+  } catch (error) {
+    console.warn(`Invalid source embedding for question ${questionId}:`, error);
+    return [];
+  }
+
+  const storedEmbeddings = await retrieveReadyEmbeddings();
+  const similarities = [];
+  for (const stored of storedEmbeddings) {
+    if (String(stored.questionId) === String(questionId)) continue;
+    try {
+      const score = calculateCosineSimilarity(
+        sourceEmbedding,
+        stored.embedding,
+      );
+      if (score >= normalizedThreshold) {
+        similarities.push({ questionId: stored.questionId, score });
+      }
+    } catch (error) {
+      console.warn(
+        `Failed to calculate similarity for question ${stored.questionId}:`,
+        error.message,
+      );
+    }
+  }
+  similarities.sort((a, b) => b.score - a.score);
+  const topResults = similarities.slice(0, normalizedK);
+  if (topResults.length === 0) return [];
+
+  const questionIds = topResults.map((result) => result.questionId);
+  const placeholders = questionIds.map(() => "?").join(",");
+  const detailsRows = await safeExecute(
+    `SELECT
+       q.question_id AS questionId,
+       q.question_hash AS questionHash,
+       q.title,
+       q.content,
+       q.created_at AS createdAt,
+       q.updated_at AS updatedAt,
+       u.user_id AS userId,
+       u.first_name AS firstName,
+       u.last_name AS lastName,
+       COUNT(DISTINCT a.answer_id) AS answerCount
+     FROM questions q
+     JOIN users u ON u.user_id = q.user_id
+     LEFT JOIN answers a ON a.question_id = q.question_id
+     WHERE q.question_id IN (${placeholders})
+     GROUP BY q.question_id, u.user_id`,
+    questionIds,
+  );
+
+  const questionMap = {};
+  detailsRows.forEach((row) => {
+    questionMap[String(row.questionId)] = {
+      id: row.questionId,
+      questionHash: row.questionHash,
+      title: row.title,
+      content: row.content,
+      answerCount: row.answerCount,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      author: {
+        id: row.userId,
+        firstName: row.firstName,
+        lastName: row.lastName,
+      },
+    };
+  });
+
+  return topResults
+    .filter((result) => questionMap[String(result.questionId)])
+    .map((result) => ({
+      score: Number(result.score.toFixed(6)),
+      ...questionMap[String(result.questionId)],
+    }));
+}
+/**
+ * Get the current vector search configuration values from environment variables or defaults.
+ * @returns {Object} The current vector configuration values.
+ */
+export function getVectorConfig() {
+  return {
+    recommendThreshold: RECOMMEND_THRESHOLD,
+    recommendK: RECOMMEND_K,
+  };
 }
