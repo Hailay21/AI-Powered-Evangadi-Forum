@@ -1,11 +1,10 @@
 import crypto from 'crypto';
 import { safeExecute } from '../../../../db/config.js';
-import { BadRequestError, NotFoundError } from '../../../../utils/errors/index.js';
+import { BadRequestError } from '../../../utils/errors/index.js';
 import {
-  findSimilarQuestionsByQuestionId,
-  findSimilarQuestionsByText,
+
   generateQuestionEmbedding,
-  getVectorConfig,
+
   normalizeQuestionText,
   storeQuestionVector,
 } from './vector.service.js';
