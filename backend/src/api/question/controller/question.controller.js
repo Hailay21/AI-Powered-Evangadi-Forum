@@ -1,10 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import {
   createQuestionWithVectorService,
-  getSimilarQuestionsService,
-  getQuestionsService,
-  searchQuestionsSemanticService,
-  getSingleQuestionService,
+  
 } from '../services/question.service.js';
 
 /**
