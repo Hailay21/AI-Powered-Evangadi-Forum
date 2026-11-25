@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { safeExecute } from "../../../../db/config.js";
-// import { ServiceUnavailableError } from "../../../../utils/errors/index.js";
+import { ServiceUnavailableError } from "../../../../utils/errors/index.js";
 
 const GEMINI_EMBEDDING_MODEL =
   process.env.GEMINI_EMBEDDING_MODEL || "gemini-embedding-001";
@@ -101,8 +101,11 @@ export async function generateQuestionEmbedding(sourceText, options = {}) {
       },
     });
 
+    // const values = response.embeddings?.[0]?.values;
+    // console.log(`Length of embedding: ${embeddingLength}`);
+
     const values = response.embeddings?.[0]?.values;
-    console.log(`Length of embedding: ${embeddingLength}`);
+    console.log(`Length of embedding: ${values?.length}`);
 
     if (!Array.isArray(values) || values.length === 0) {
       throw new Error("Gemini embedding response does not contain values");
@@ -286,7 +289,7 @@ export async function findSimilarQuestionsByText({ sourceText, threshold, k }) {
     );
   }
 
-  const queryEmbedding = embeddingResult.embedding; // [0.0123213, -0.12324, .....]
+  const queryEmbedding = embeddingResult.embedding; // [0.065783, -0.12329, .....]
 
   // Retrieve all ready embeddings from MySQL
   let storedEmbeddings;

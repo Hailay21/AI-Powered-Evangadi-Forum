@@ -1,8 +1,6 @@
-import { StatusCodes } from 'http-status-codes';
-import {
-  createQuestionWithVectorService,
-  
-} from '../services/question.service.js';
+import { StatusCodes } from "http-status-codes";
+import { createQuestionWithVectorService,searchQuestionsSemanticService,
+  getSimilarQuestionsService, } from "../services/question.service.js";
 
 /**
  * Handles creating a new question.
@@ -23,7 +21,7 @@ export const createQuestionController = async (req, res, next) => {
 
     res.status(StatusCodes.CREATED).json({
       success: true,
-      message: 'Question posted successfully.',
+      message: "Question posted successfully.",
       data: result.question,
     });
   } catch (error) {
@@ -31,3 +29,44 @@ export const createQuestionController = async (req, res, next) => {
   }
 };
 
+export const searchQuestionsSemanticController = async (req, res, next) => {
+  try {
+    const result = await searchQuestionsSemanticService({
+      query: req.query.query,
+      k: req.query.k ? Number(req.query.k) : 5,
+      threshold:
+        req.query.threshold !== undefined
+          ? Number(req.query.threshold)
+          : undefined,
+    });
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Semantic search completed successfully.",
+      ...result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+export const getSimilarQuestionsController = async (req, res, next) => {
+  try {
+    const result = await getSimilarQuestionsService({
+      questionHash: req.params.questionHash,
+      k: req.query.k ? Number(req.query.k) : 5,
+      threshold:
+        req.query.threshold !== undefined
+          ? Number(req.query.threshold)
+          : undefined,
+    });
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Similar questions fetched successfully.',
+      ...result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
