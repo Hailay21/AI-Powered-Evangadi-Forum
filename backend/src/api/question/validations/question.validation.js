@@ -20,6 +20,21 @@ export const createQuestionValidation = [
     .trim(),
   validationErrorHandler,
 ];
+// task-10 (1)
+export const getQuestionsValidation = [
+  query("search")
+    .optional()
+    .isString()
+    .withMessage("Search must be a string")
+    .trim(),
+  query("mine")
+    .optional()
+    .isBoolean()
+    .withMessage("Mine must be a boolean")
+    .toBoolean(),
+  validationErrorHandler,
+];
+
 
 // semantic search validation
 export const searchQuestionsSemanticValidation = [
@@ -41,5 +56,15 @@ export const searchQuestionsSemanticValidation = [
     .isFloat({ min: 0, max: 1 })
     .withMessage("threshold must be between 0 and 1")
     .toFloat(),
+
+// task-10 (2)
+
+export const getSingleQuestionValidation = [
+  param("questionHash")
+    .isString()
+    .withMessage("Question hash is required")
+    .matches(/^[a-f0-9]{16}$/)
+    .withMessage("Question hash must be a 16-character lowercase hex string"),
+
   validationErrorHandler,
 ];

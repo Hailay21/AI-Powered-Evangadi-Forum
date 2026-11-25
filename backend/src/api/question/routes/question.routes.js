@@ -1,10 +1,22 @@
 import express from 'express';
 import {
+
   createQuestionController, searchQuestionsSemanticController,
 } from '../controller/question.controller.js';
 import {
   createQuestionValidation,searchQuestionsSemanticValidation,
 } from '../validations/question.validation.js';
+
+  createQuestionController,
+  getQuestionsController,
+  getSingleQuestionController,
+} from "../controller/question.controller.js";
+import {
+  createQuestionValidation,
+  getQuestionsValidation,
+  getSingleQuestionValidation,
+} from "../validations/question.validation.js";
+
 import { authenticateUser } from '../../../middleware/authentication.js';
 
 const router = express.Router();
@@ -19,6 +31,22 @@ router.post(
   authenticateUser,
   createQuestionValidation,
   createQuestionController,
+);
+
+// T-10: Get all Question
+router.get(
+  "/",
+  authenticateUser,
+  getQuestionsValidation,
+  getQuestionsController,
+);
+
+//T-10: Get Single Question
+router.get(
+  "/:questionHash",
+  authenticateUser,
+  getSingleQuestionValidation,
+  getSingleQuestionController,
 );
 
 
