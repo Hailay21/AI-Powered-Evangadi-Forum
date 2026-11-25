@@ -20,6 +20,18 @@ router.post(
   createQuestionValidation,
   createQuestionController,
 );
+// Register protected endpoint for AI coaching
+/**
+ * @route POST /api/questions/draft-coach
+ * @desc AI suggestions for a question draft (title + body)
+ * @access Private
+ */
+router.post(
+  "/draft-coach",
+  authenticateUser,
+  generateQuestionDraftCoachValidation,
+  generateQuestionDraftCoachController,
+);
 
 
 
