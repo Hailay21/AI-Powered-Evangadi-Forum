@@ -1,10 +1,14 @@
 import express from 'express';
 import {
-  createQuestionController
-} from '../controller/question.controller.js';
+  createQuestionController,
+  getQuestionsController,
+  getSingleQuestionController,
+} from "../controller/question.controller.js";
 import {
-  createQuestionValidation
-} from '../validations/question.validation.js';
+  createQuestionValidation,
+  getQuestionsValidation,
+  getSingleQuestionValidation,
+} from "../validations/question.validation.js";
 import { authenticateUser } from '../../../middleware/authentication.js';
 
 const router = express.Router();
@@ -19,6 +23,22 @@ router.post(
   authenticateUser,
   createQuestionValidation,
   createQuestionController,
+);
+
+// T-10: Get all Question
+router.get(
+  "/",
+  authenticateUser,
+  getQuestionsValidation,
+  getQuestionsController,
+);
+
+//T-10: Get Single Question
+router.get(
+  "/:questionHash",
+  authenticateUser,
+  getSingleQuestionValidation,
+  getSingleQuestionController,
 );
 
 

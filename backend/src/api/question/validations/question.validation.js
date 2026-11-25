@@ -1,23 +1,47 @@
-import { body, param, query } from 'express-validator';
-import { validationErrorHandler } from '../../../middleware/validation-handler.js';
+import { body, param, query } from "express-validator";
+import { validationErrorHandler } from "../../../middleware/validation-handler.js";
 
 export const createQuestionValidation = [
-  body('title')
+  body("title")
     .notEmpty()
-    .withMessage('Question title is required')
+    .withMessage("Question title is required")
     .isString()
-    .withMessage('Question title must be a string')
+    .withMessage("Question title must be a string")
     .isLength({ min: 5, max: 255 })
-    .withMessage('Question title must be between 5 and 255 characters')
+    .withMessage("Question title must be between 5 and 255 characters")
     .trim(),
-  body('content')
+  body("content")
     .notEmpty()
-    .withMessage('Question content is required')
+    .withMessage("Question content is required")
     .isString()
-    .withMessage('Question content must be a string')
+    .withMessage("Question content must be a string")
     .isLength({ min: 10 })
-    .withMessage('Question content must be at least 10 characters')
+    .withMessage("Question content must be at least 10 characters")
     .trim(),
   validationErrorHandler,
 ];
+// task-10 (1)
+export const getQuestionsValidation = [
+  query("search")
+    .optional()
+    .isString()
+    .withMessage("Search must be a string")
+    .trim(),
+  query("mine")
+    .optional()
+    .isBoolean()
+    .withMessage("Mine must be a boolean")
+    .toBoolean(),
+  validationErrorHandler,
+];
 
+// task-10 (2)
+
+export const getSingleQuestionValidation = [
+  param("questionHash")
+    .isString()
+    .withMessage("Question hash is required")
+    .matches(/^[a-f0-9]{16}$/)
+    .withMessage("Question hash must be a 16-character lowercase hex string"),
+  validationErrorHandler,
+];
