@@ -6,6 +6,7 @@ import {
   getQuestionsValidation,
   getSingleQuestionValidation,
   generateQuestionDraftCoachValidation,
+  assessAnswerAgainstQuestionValidation,
 } from "../validations/question.validation.js";
 import {
   createQuestionController,
@@ -14,6 +15,7 @@ import {
   generateQuestionDraftCoachController,
   searchQuestionsSemanticController,
   getSimilarQuestionsController,
+  assessAnswerAgainstQuestionController,
 } from "../controller/question.controller.js";
 import { authenticateUser } from "../../../middleware/authentication.js";
 
@@ -84,8 +86,6 @@ router.post(
   generateQuestionDraftCoachController,
 );
 
-export default router;
-
 // Register protected endpoint//T-18 start here
 /**
  * @route POST /api/questions/:questionHash/answer-fit
@@ -99,3 +99,5 @@ router.post(
   assessAnswerAgainstQuestionController,
 );
 // T-18 end here
+
+export default router;

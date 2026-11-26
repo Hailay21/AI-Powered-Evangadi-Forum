@@ -339,35 +339,35 @@ export const getSingleQuestionService = async ({ questionHash }) => {
   };
 };
 
-// Retrieve question and handle not-found error//T-18 start here
+// // Retrieve question and handle not-found error//T-18 start here
 
-export const getSingleQuestionService = async ({ questionHash }) => {
-  const normalizedAnswerLimit = 100;
+// export const getSingleQuestionService = async ({ questionHash }) => {
+//   const normalizedAnswerLimit = 100;
 
-  const questionSql = `
-    SELECT
-      q.question_id AS id,
-      q.question_hash AS questionHash,
-      q.title,
-      q.content,
-      q.created_at AS createdAt,
-      q.updated_at AS updatedAt,
-      u.user_id AS userId,
-      u.first_name AS firstName,
-      u.last_name AS lastName,
-      COUNT(DISTINCT a.answer_id) AS answerCount
-    FROM questions q
-    JOIN users u ON u.user_id = q.user_id
-    LEFT JOIN answers a ON a.question_id = q.question_id
-    WHERE q.question_hash = ?
-    GROUP BY q.question_id, u.user_id
-  `;
+//   const questionSql = `
+//     SELECT
+//       q.question_id AS id,
+//       q.question_hash AS questionHash,
+//       q.title,
+//       q.content,
+//       q.created_at AS createdAt,
+//       q.updated_at AS updatedAt,
+//       u.user_id AS userId,
+//       u.first_name AS firstName,
+//       u.last_name AS lastName,
+//       COUNT(DISTINCT a.answer_id) AS answerCount
+//     FROM questions q
+//     JOIN users u ON u.user_id = q.user_id
+//     LEFT JOIN answers a ON a.question_id = q.question_id
+//     WHERE q.question_hash = ?
+//     GROUP BY q.question_id, u.user_id
+//   `;
 
-  const questionRows = await safeExecute(questionSql, [questionHash]);
-  if (questionRows.length === 0) {
-    throw new NotFoundError("Question not found");
-  }
+//   const questionRows = await safeExecute(questionSql, [questionHash]);
+//   if (questionRows.length === 0) {
+//     throw new NotFoundError("Question not found");
+//   }
 
-  const question = questionRows[0];
-  const questionId = question.id;
-  // T-18 end here
+//   const question = questionRows[0];
+//   const questionId = question.id;
+//   // T-18 end here

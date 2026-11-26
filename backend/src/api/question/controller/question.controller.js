@@ -6,7 +6,10 @@ import {
   searchQuestionsSemanticService,
   getSimilarQuestionsService,
 } from "../services/question.service.js";
-import { generateQuestionDraftCoachService } from "../services/geminiTextCoach.service.js";
+import {
+  generateQuestionDraftCoachService,
+  assessAnswerAgainstQuestionService,
+} from "../services/geminiTextCoach.service.js";
 
 /**
  * Handles creating a new question.
@@ -133,13 +136,10 @@ export const getSingleQuestionController = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-
-};
-
 };
 
 // Answer fit controller//T-18 start here
-    /**
+/**
  * Handles AI relevance assessment of an answer draft against a question.
  */
 export const assessAnswerAgainstQuestionController = async (req, res, next) => {
@@ -160,5 +160,5 @@ export const assessAnswerAgainstQuestionController = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-          };
+};
 // T-18 end here
