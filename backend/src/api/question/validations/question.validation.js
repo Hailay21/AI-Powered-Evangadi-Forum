@@ -106,3 +106,23 @@ export const getSingleQuestionValidation = [
 
   validationErrorHandler,
 ];
+	// Validate question hash and answer text //T-18 start here
+export const assessAnswerAgainstQuestionValidation = [
+  param("questionHash")
+    .isString()
+    .withMessage("Question hash is required")
+    .matches(/^[a-f0-9]{16}$/)
+    .withMessage("Question hash must be a 16-character lowercase hex string"),
+  body("answerText")
+    .notEmpty()
+    .withMessage("Answer text is required")
+    .isString()
+    .withMessage("Answer text must be a string")
+    .isLength({ min: 20 })
+    .withMessage(
+      "Answer text must be at least 20 characters for a meaningful fit check",
+    )
+    .trim(),
+  validationErrorHandler,
+];
+// T-18 end here

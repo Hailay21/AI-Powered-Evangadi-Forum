@@ -133,4 +133,32 @@ export const getSingleQuestionController = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+
 };
+
+};
+
+// Answer fit controller//T-18 start here
+    /**
+ * Handles AI relevance assessment of an answer draft against a question.
+ */
+export const assessAnswerAgainstQuestionController = async (req, res, next) => {
+  try {
+    const { questionHash } = req.params;
+    const { answerText } = req.body;
+    const { question } = await getSingleQuestionService({ questionHash });
+    const data = await assessAnswerAgainstQuestionService({
+      questionTitle: question.title,
+      questionContent: question.content,
+      answerText,
+    });
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Answer fit assessed.",
+      data,
+    });
+  } catch (error) {
+    next(error);
+  }
+          };
+// T-18 end here
