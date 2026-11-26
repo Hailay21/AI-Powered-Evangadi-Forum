@@ -1,25 +1,64 @@
-import express from 'express';
+import express from "express";
 import {
-
-  createQuestionController, searchQuestionsSemanticController,
-} from '../controller/question.controller.js';
-import {
-  createQuestionValidation,searchQuestionsSemanticValidation,
-} from '../validations/question.validation.js';
-
-  createQuestionController,
-  getQuestionsController,
-  getSingleQuestionController,
-} from "../controller/question.controller.js";
-import {
+  searchQuestionsSemanticValidation,
+  getSimilarQuestionsValidation,
   createQuestionValidation,
   getQuestionsValidation,
   getSingleQuestionValidation,
+  generateQuestionDraftCoachValidation,
 } from "../validations/question.validation.js";
-
-import { authenticateUser } from '../../../middleware/authentication.js';
+import {
+  createQuestionController,
+  getQuestionsController,
+  getSingleQuestionController,
+  generateQuestionDraftCoachController,
+  searchQuestionsSemanticController,
+  getSimilarQuestionsController,
+} from "../controller/question.controller.js";
+import { authenticateUser } from "../../../middleware/authentication.js";
 
 const router = express.Router();
+
+// T-10: Get all Question
+router.get(
+  "/",
+  authenticateUser,
+  getQuestionsValidation,
+  getQuestionsController,
+);
+
+/**
+ * @route GET /api/questions/search
+ * @desc Semantic search for question using vector embeddings based on a text query
+ * @access private
+ */
+
+router.get(
+  "/search",
+  authenticateUser,
+  searchQuestionsSemanticValidation,
+  searchQuestionsSemanticController,
+);
+
+/**
+ * @route GET /api/questions/:questionHash/similar
+ * @desc Get similar questions based on vector embeddings
+ * @access Private
+ */
+router.get(
+  "/:questionHash/similar",
+  authenticateUser,
+  getSimilarQuestionsValidation,
+  getSimilarQuestionsController,
+);
+
+//T-10: Get Single Question
+router.get(
+  "/:questionHash",
+  authenticateUser,
+  getSingleQuestionValidation,
+  getSingleQuestionController,
+);
 
 /**
  * @route POST /api/questions
@@ -27,7 +66,7 @@ const router = express.Router();
  * @access Protected
  */
 router.post(
-  '/',
+  "/",
   authenticateUser,
   createQuestionValidation,
   createQuestionController,
@@ -44,43 +83,5 @@ router.post(
   generateQuestionDraftCoachValidation,
   generateQuestionDraftCoachController,
 );
-
-// T-10: Get all Question
-router.get(
-  "/",
-  authenticateUser,
-  getQuestionsValidation,
-  getQuestionsController,
-);
-
-//T-10: Get Single Question
-router.get(
-  "/:questionHash",
-  authenticateUser,
-  getSingleQuestionValidation,
-  getSingleQuestionController,
-);
-
-
-/**
- * @route GET /api/questions/search
- * @desc Semantic search for question using vector embeddings based on a text query
- * @access private
- */
-
-router.get(
-  '/search',
-  authenticateUser,
-  searchQuestionsSemanticValidation,
-  searchQuestionsSemanticController,
-);
-
-
-
-
-
-
-
-
 
 export default router;

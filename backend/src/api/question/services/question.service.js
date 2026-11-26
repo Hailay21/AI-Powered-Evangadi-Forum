@@ -1,10 +1,5 @@
-
 import crypto from "crypto";
 import { safeExecute } from "../../../../db/config.js";
-import { BadRequestError } from "../../../utils/errors/index.js";
-
-import crypto from 'crypto';
-import { safeExecute } from '../../../../db/config.js';
 import { BadRequestError, NotFoundError } from "../../../utils/errors/index.js";
 
 import {
@@ -107,7 +102,6 @@ export const createQuestionWithVectorService = async (payload) => {
     question: creationResult,
   };
 };
-
 
 /**
  * Performs semantic search on questions using vector similarity.
@@ -344,6 +338,3 @@ export const getSingleQuestionService = async ({ questionHash }) => {
     },
   };
 };
-
-
-
