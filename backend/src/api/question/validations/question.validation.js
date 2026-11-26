@@ -20,6 +20,25 @@ export const createQuestionValidation = [
     .trim(),
   validationErrorHandler,
 ];
+// Validate title and content
+export const generateQuestionDraftCoachValidation = [
+  body("title")
+    .optional()
+    .isString()
+    .withMessage("Question title must be a string")
+    .isLength({ max: 255 })
+    .withMessage("Question title must not exceed 255 characters")
+    .trim(),
+  body("content")
+    .notEmpty()
+    .withMessage("Question content is required")
+    .isString()
+    .withMessage("Question content must be a string")
+    .isLength({ min: 10 })
+    .withMessage("Question content must be at least 10 characters")
+    .trim(),
+  validationErrorHandler,
+];
 // task-10 (1)
 export const getQuestionsValidation = [
   query("search")

@@ -38,6 +38,18 @@ export const createQuestionController = async (req, res, next) => {
   }
 };
 
+// Draft coach controller
+/**
+ * Handles AI coaching for a question draft (title + body).
+ */
+export const generateQuestionDraftCoachController = async (req, res, next) => {
+  try {
+    const { title, content } = req.body;
+    const data = await generateQuestionDraftCoachService({ title, content });
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Draft suggestions generated.",
+      data,
 
 export const searchQuestionsSemanticController = async (req, res, next) => {
   try {
