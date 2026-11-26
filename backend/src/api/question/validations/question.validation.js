@@ -54,7 +54,6 @@ export const getQuestionsValidation = [
   validationErrorHandler,
 ];
 
-
 // semantic search validation
 export const searchQuestionsSemanticValidation = [
   query("query")
@@ -75,7 +74,27 @@ export const searchQuestionsSemanticValidation = [
     .isFloat({ min: 0, max: 1 })
     .withMessage("threshold must be between 0 and 1")
     .toFloat(),
+  validationErrorHandler,
+];
 
+export const getSimilarQuestionsValidation = [
+  param("questionHash")
+    .isString()
+    .withMessage("Question hash is required")
+    .matches(/^[a-f0-9]{16}$/)
+    .withMessage("Question hash must be a 16-character lowercase hex string"),
+  query("k")
+    .optional()
+    .isInt({ min: 1, max: 20 })
+    .withMessage("k must be between 1 and 20")
+    .toInt(),
+  query("threshold")
+    .optional()
+    .isFloat({ min: 0, max: 1 })
+    .withMessage("threshold must be between 0 and 1")
+    .toFloat(),
+  validationErrorHandler,
+];
 // task-10 (2)
 
 export const getSingleQuestionValidation = [
