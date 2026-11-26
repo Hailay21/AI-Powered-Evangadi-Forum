@@ -31,6 +31,14 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/my-questions"
+            element={
+              <ProtectedRoute>
+                <h1>My Questions Page</h1>
+              </ProtectedRoute>
+            }
+          />
           {/*</Routes></Route>*/}
 
           {/* Catch-all redirect */}
