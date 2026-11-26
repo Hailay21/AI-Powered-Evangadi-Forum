@@ -84,3 +84,17 @@ router.get(
 
 
 export default router;
+
+// Register protected endpoint//T-18 start here
+/**
+ * @route POST /api/questions/:questionHash/answer-fit
+ * @desc AI relevance check for an answer draft vs the question
+ * @access Private
+ */
+router.post(
+  "/:questionHash/answer-fit",
+  authenticateUser,
+  assessAnswerAgainstQuestionValidation,
+  assessAnswerAgainstQuestionController,
+);
+// T-18 end here
