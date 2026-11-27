@@ -55,7 +55,8 @@ function getStoredUser() {
 
   try {
     return JSON.parse(userJson);
-  } catch {
+  } catch (error) {
+    // If JSON parsing fails, clear invalid data
     localStorage.removeItem("user");
     return null;
   }
