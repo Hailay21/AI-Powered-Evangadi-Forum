@@ -43,15 +43,6 @@ export function timeAgo(dateInput) {
  * @param {{ id?: string | number } | null | undefined} user
  * @returns {boolean}
  */
-export function getApiErrorMessage(error, fallback) {
-  return (
-    error?.response?.data?.msg ||
-    error?.response?.data?.message ||
-    error?.message ||
-    fallback
-  );
-}
-
 export function isAuthoredByUser(question, user) {
   if (!question || !user) return false;
   const authorId = question.author?.id;

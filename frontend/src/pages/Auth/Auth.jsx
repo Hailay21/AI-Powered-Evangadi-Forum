@@ -4,7 +4,7 @@
 import { useState } from "react";
 
 import { motion as Motion, AnimatePresence } from "framer-motion";
-import { Navigate, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Sparkles,
   Code,
@@ -19,21 +19,20 @@ import styles from "../Auth/Auth.module.css";
 export default function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { register, login, isAuthenticated, loading: authLoading } = useAuth();
+  const { register, login } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
+
+  // Registration form state
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  // Error and loading state
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState(null);
-
-  if (!authLoading && isAuthenticated) {
-    const from = location.state?.from?.pathname || "/dashboard";
-    return <Navigate to={from} replace />;
-  }
 
   // Handle form submission for both login and registration
   const handleSubmit = async (e) => {
@@ -102,6 +101,7 @@ export default function Auth() {
         // Check location state for original URL after login
         // Redirect to original URL if present, otherwise dashboard
         const from = location.state?.from?.pathname || "/dashboard";
+        navigate(from, { replace: true });
         navigate(from, { replace: true });
       } else {
         // Registration flow

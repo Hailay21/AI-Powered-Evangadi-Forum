@@ -1,8 +1,8 @@
-import 'dotenv/config';
 import express from 'express';
 import { db } from './db/config.js';
 import { mainRouter } from './src/api/routes.js';
 import { errorHandler } from './src/middleware/error-handler.js';
+import { authenticateUser } from './src/middleware/authentication.js';
 import cors from 'cors';
 
 const app = express();
@@ -14,7 +14,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', authenticateUser, (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });
 });
 
