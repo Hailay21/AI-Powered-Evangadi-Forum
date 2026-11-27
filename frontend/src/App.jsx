@@ -23,17 +23,48 @@ function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
 
-          {/* Protected routes with Layout shell (T-13) */}
-          <Route
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/my-questions" element={<MyQuestions />} />
-            <Route path="/questions/ask" element={<PostQuestion />} />
+          {/* Protected routes with Layout (T-13) */}
+          <Route element={<Layout />}>
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/questions/ask"
+              element={
+                <ProtectedRoute>
+                  <PostQuestion />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-questions"
+              element={
+                <ProtectedRoute>
+                  <MyQuestions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/question/:id"
+              element={
+                <ProtectedRoute>
+                  <h1>Question Detail Page</h1>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/rag-documents"
+              element={
+                <ProtectedRoute>
+                  <h1>RAG Documents Page</h1>
+                </ProtectedRoute>
+              }
+            />
           </Route>
 
           {/* Catch-all redirect */}
