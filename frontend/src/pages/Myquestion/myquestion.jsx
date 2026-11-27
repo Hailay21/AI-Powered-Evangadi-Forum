@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import ForumShell from "../../components/ForumShell/ForumShell";
 import { questionService } from "../../services/question/question.service";
+import { getApiErrorMessage } from "../../lib/utils";
 import styles from "./MyQuestions.module.css";
 
 export default function MyQuestions() {
@@ -13,15 +15,28 @@ export default function MyQuestions() {
     questionService
       .getQuestions({ mine: true })
       .then(response => mounted && setQuestions(response.data || []))
-      .catch(err => mounted && setError(err.response?.data?.msg || err.response?.data?.message || "Unable to load your questions."))
+      .catch(err => mounted && setError(getApiErrorMessage(err, "Unable to load your questions.")))
       .finally(() => mounted && setIsLoading(false));
     return () => { mounted = false; };
   }, []);
 
-  if (isLoading) return <p className={styles.state}>Loading your questions...</p>;
-  if (error) return <p className={styles.error} role="alert">{error}</p>;
+  if (isLoading) {
+    return (
+      <ForumShell>
+        <p className={styles.state}>Loading your questions...</p>
+      </ForumShell>
+    );
+  }
+  if (error) {
+    return (
+      <ForumShell>
+        <p className={styles.error} role="alert">{error}</p>
+      </ForumShell>
+    );
+  }
 
   return (
+    <ForumShell>
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
@@ -53,5 +68,6 @@ export default function MyQuestions() {
         </div>
       )}
     </div>
+    </ForumShell>
   );
 }

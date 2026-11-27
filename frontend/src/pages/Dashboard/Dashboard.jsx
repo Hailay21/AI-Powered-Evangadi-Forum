@@ -6,7 +6,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import ForumShell from "../../components/ForumShell/ForumShell";
 import { questionService } from "../../services/question/question.service";
+import { getApiErrorMessage } from "../../lib/utils";
 import styles from "../Dashboard/Dashboard.module.css";
 
 export default function Dashboard() {
@@ -32,11 +34,7 @@ export default function Dashboard() {
         setQuestions(response.data || []);
         setError("");
       } catch (err) {
-        setError(
-          err.response?.data?.msg ||
-            err.response?.data?.message ||
-            "Unable to load questions.",
-        );
+        setError(getApiErrorMessage(err, "Unable to load questions."));
       } finally {
         setIsLoading(false);
       }
@@ -51,11 +49,7 @@ export default function Dashboard() {
       .then((response) => mounted && setQuestions(response.data || []))
       .catch((err) => {
         if (mounted) {
-          setError(
-            err.response?.data?.msg ||
-              err.response?.data?.message ||
-              "Unable to load questions.",
-          );
+          setError(getApiErrorMessage(err, "Unable to load questions."));
         }
       })
       .finally(() => mounted && setIsLoading(false));
@@ -66,12 +60,18 @@ export default function Dashboard() {
 
   const handleSearch = (event) => {
     event.preventDefault();
+    const query = searchQuery.trim();
+    if (searchMode === "semantic" && query.length > 0 && query.length < 5) {
+      setError("AI search needs at least 5 characters.");
+      return;
+    }
     setIsLoading(true);
     setError("");
-    loadQuestions(searchQuery.trim());
+    loadQuestions(query);
   };
 
   return (
+    <ForumShell>
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
@@ -152,5 +152,6 @@ export default function Dashboard() {
         )}
       </section>
     </div>
+    </ForumShell>
   );
 }
