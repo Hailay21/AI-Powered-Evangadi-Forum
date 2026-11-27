@@ -126,3 +126,20 @@ export const assessAnswerAgainstQuestionValidation = [
   validationErrorHandler,
 ];
 // T-18 end here
+
+export const createAnswerValidation = [
+  param("questionHash")
+    .isString()
+    .withMessage("Question hash is required")
+    .matches(/^[a-f0-9]{16}$/)
+    .withMessage("Question hash must be a 16-character lowercase hex string"),
+  body("content")
+    .notEmpty()
+    .withMessage("Answer content is required")
+    .isString()
+    .withMessage("Answer content must be a string")
+    .isLength({ min: 10, max: 10000 })
+    .withMessage("Answer content must be between 10 and 10000 characters")
+    .trim(),
+  validationErrorHandler,
+];

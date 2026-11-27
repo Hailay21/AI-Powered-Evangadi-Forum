@@ -65,6 +65,7 @@ export const createQuestionWithVectorService = async (payload) => {
   // Normalize the question text (e.g., title) to prepare it for vector embedding
   const sourceText = normalizeQuestionText({
     title: payload.title,
+    content: payload.content,
   });
 
   try {
@@ -178,8 +179,9 @@ const buildQuestionFilters = (filters) => {
 
   // Search by question title or content
   if (filters.search) {
-    conditions.push("(q.title LIKE ? OR q.content LIKE ?)");
-    const searchTerm = `%${filters.search}%`;
+    const escaped = String(filters.search).replace(/[\\%_]/g, "\\$&");
+    conditions.push("(q.title LIKE ? ESCAPE '\\\\' OR q.content LIKE ? ESCAPE '\\\\')");
+    const searchTerm = `%${escaped}%`;
     params.push(searchTerm, searchTerm);
   }
 
@@ -336,5 +338,35 @@ export const getSingleQuestionService = async ({ questionHash }) => {
       limit: normalizedAnswerLimit,
       total: answers.length,
     },
+  };
+};
+
+export const createAnswerService = async ({ questionHash, userId, content }) => {
+  const questionRows = await safeExecute(
+    "SELECT question_id AS id FROM questions WHERE question_hash = ? LIMIT 1",
+    [questionHash],
+  );
+  if (questionRows.length === 0) {
+    throw new NotFoundError("Question not found");
+  }
+
+  let result;
+  try {
+    result = await safeExecute(
+      "INSERT INTO answers (question_id, user_id, content) VALUES (?, ?, ?)",
+      [questionRows[0].id, userId, content],
+    );
+  } catch (error) {
+    if (error?.code === "ER_NO_REFERENCED_ROW_2") {
+      throw new BadRequestError("User does not exist.");
+    }
+    throw error;
+  }
+
+  return {
+    id: result.insertId,
+    questionHash,
+    content,
+    userId,
   };
 };
