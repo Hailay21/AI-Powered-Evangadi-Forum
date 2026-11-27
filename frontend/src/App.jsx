@@ -10,7 +10,7 @@ import Layout from "./components/Layout/Layout";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import Auth from "./pages/Auth/Auth";
 import Dashboard from "./pages/Dashboard/Dashboard";
-import Landing from "./pages/Landing/Landing";
+//import Landing from "./pages/Landing/Landing";
 import MyQuestions from "./pages/Myquestion/myquestion";
 import PostQuestion from "./pages/PostQuestion/PostQuestion";
 
@@ -23,49 +23,8 @@ function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
 
-          {/* Protected routes with Layout (T-13) */}
-          <Route element={<Layout />}>
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/questions/ask"
-              element={
-                <ProtectedRoute>
-                  <PostQuestion />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/my-questions"
-              element={
-                <ProtectedRoute>
-                  <MyQuestions />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/question/:id"
-              element={
-                <ProtectedRoute>
-                  <h1>Question Detail Page</h1>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/rag-documents"
-              element={
-                <ProtectedRoute>
-                  <h1>RAG Documents Page</h1>
-                </ProtectedRoute>
-              }
-            />
-          </Route>
+          {/* Protected routes with Layout */}
+          {/* <Route element={<Layout />}></Route> */}
 
           {/* Catch-all redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />
