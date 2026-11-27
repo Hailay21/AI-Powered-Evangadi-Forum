@@ -1,8 +1,15 @@
-import { StatusCodes } from 'http-status-codes';
+import { StatusCodes } from "http-status-codes";
 import {
   createQuestionWithVectorService,
-  
-} from '../services/question.service.js';
+  getQuestionsService,
+  getSingleQuestionService,
+  searchQuestionsSemanticService,
+  getSimilarQuestionsService,
+} from "../services/question.service.js";
+import {
+  generateQuestionDraftCoachService,
+  assessAnswerAgainstQuestionService,
+} from "../services/geminiTextCoach.service.js";
 
 /**
  * Handles creating a new question.
@@ -16,14 +23,14 @@ export const createQuestionController = async (req, res, next) => {
   try {
     const { title, content } = req.body;
     const result = await createQuestionWithVectorService({
-      userId: req.user.id, // author id (authenticated user)
+      userId: req.user?.id, // author id (authenticated user)
       title,
       content,
     });
 
     res.status(StatusCodes.CREATED).json({
       success: true,
-      message: 'Question posted successfully.',
+      message: "Question posted successfully.",
       data: result.question,
     });
   } catch (error) {
@@ -31,3 +38,127 @@ export const createQuestionController = async (req, res, next) => {
   }
 };
 
+/**
+ * Handles AI coaching for a question draft (title + body).
+ */
+export const generateQuestionDraftCoachController = async (req, res, next) => {
+  try {
+    const { title, content } = req.body;
+    const data = await generateQuestionDraftCoachService({ title, content });
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Draft suggestions generated.",
+      data,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const searchQuestionsSemanticController = async (req, res, next) => {
+  try {
+    const result = await searchQuestionsSemanticService({
+      query: req.query.query,
+      k: req.query.k ? Number(req.query.k) : 5,
+      threshold:
+        req.query.threshold !== undefined
+          ? Number(req.query.threshold)
+          : undefined,
+    });
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Semantic search completed successfully.",
+      ...result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// task-1 GET /api/questions
+export const getQuestionsController = async (req, res, next) => {
+  try {
+    const filters = {
+      search: req.query.search,
+      mine: req.query.mine,
+      userId: req.user?.id, // Pass the authenticated user's ID
+    };
+
+    const result = await getQuestionsService(filters);
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Questions fetched successfully.",
+      ...result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getSimilarQuestionsController = async (req, res, next) => {
+  try {
+    const result = await getSimilarQuestionsService({
+      questionHash: req.params.questionHash,
+      k: req.query.k ? Number(req.query.k) : 5,
+      threshold:
+        req.query.threshold !== undefined
+          ? Number(req.query.threshold)
+          : undefined,
+    });
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Similar questions fetched successfully.",
+      ...result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// task 2 GET /api/questions/:questionHash
+export const getSingleQuestionController = async (req, res, next) => {
+  try {
+    const { questionHash } = req.params;
+
+    const result = await getSingleQuestionService({
+      questionHash,
+    });
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Question fetched successfully.",
+      ...result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Answer fit controller//T-18 start here
+/**
+ * Handles AI relevance assessment of an answer draft against a question.
+ */
+export const assessAnswerAgainstQuestionController = async (req, res, next) => {
+  try {
+    const { questionHash } = req.params;
+    const { answerText } = req.body;
+    const { question } = await getSingleQuestionService({ questionHash });
+    const data = await assessAnswerAgainstQuestionService({
+      questionTitle: question.title,
+      questionContent: question.content,
+      answerText,
+    });
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Answer fit assessed.",
+      data,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+// T-18 end here

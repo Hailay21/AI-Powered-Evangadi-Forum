@@ -14,7 +14,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
-import styles from "./Auth.module.css";
+import styles from "../Auth/Auth.module.css";
 
 export default function Auth() {
   const navigate = useNavigate();
