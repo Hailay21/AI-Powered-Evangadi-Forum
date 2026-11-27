@@ -6,11 +6,13 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
-// import Layout from "./components/Layout/Layout";
+import Layout from "./components/Layout/Layout";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import Auth from "./pages/Auth/Auth";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Landing from "./pages/Landing/Landing";
+import MyQuestions from "./pages/Myquestion/myquestion";
+import PostQuestion from "./pages/PostQuestion/PostQuestion";
 
 function App() {
   return (
@@ -21,25 +23,18 @@ function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
 
-          {/* Protected routes with Layout */}
-          {/*<Route element={<Layout />}>*/}
+          {/* Protected routes with Layout shell (T-13) */}
           <Route
-            path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <Layout />
               </ProtectedRoute>
             }
-          />
-          <Route
-            path="/my-questions"
-            element={
-              <ProtectedRoute>
-                <h1>My Questions Page</h1>
-              </ProtectedRoute>
-            }
-          />
-          {/*</Routes></Route>*/}
+          >
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/my-questions" element={<MyQuestions />} />
+            <Route path="/questions/ask" element={<PostQuestion />} />
+          </Route>
 
           {/* Catch-all redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />

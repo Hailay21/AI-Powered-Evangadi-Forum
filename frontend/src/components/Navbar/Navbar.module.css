@@ -1,0 +1,42 @@
+.navbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.title {
+  font-size: clamp(var(--text-xl), 2.5vw, var(--text-3xl));
+}
+
+.subtitle {
+  margin-top: 0.35rem;
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+}
+
+.askButton {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: var(--radius-md);
+  color: var(--text-inverse);
+  background: var(--primary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  white-space: nowrap;
+}
+
+.askButton:hover {
+  color: var(--text-inverse);
+  background: var(--primary-hover);
+}
+
+@media (max-width: 700px) {
+  .navbar {
+    flex-direction: column;
+  }
+}
