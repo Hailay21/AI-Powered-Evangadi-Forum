@@ -1,10 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  generateQuestionDraftCoach,
-  createQuestion,
-} from "../../services/question.service";
+import { questionService } from "../../services/question/question.service";
 import styles from "./PostQuestion.module.css";
+
+function getErrorMessage(error, fallback) {
+  return (
+    error?.response?.data?.msg ||
+    error?.response?.data?.message ||
+    error?.message ||
+    fallback
+  );
+}
 
 const MIN_TITLE_LENGTH = 5;
 const MIN_CONTENT_LENGTH = 10;
@@ -49,10 +55,15 @@ export default function PostQuestion() {
 
     setIsCoaching(true);
     try {
-      const data = await generateQuestionDraftCoach({ title, content });
+      const data = await questionService.generateQuestionDraftCoach({
+        title: title.trim(),
+        content: content.trim(),
+      });
       setCoachResult(data?.data || data);
     } catch (err) {
-      setStatusError(err.message || "Could not fetch AI draft feedback.");
+      setStatusError(
+        getErrorMessage(err, "Could not fetch AI draft feedback."),
+      );
     } finally {
       setIsCoaching(false);
     }
@@ -69,24 +80,25 @@ export default function PostQuestion() {
 
     setIsSubmitting(true);
     try {
-      const response = await createQuestion({ title, content });
-      const createdId =
-        response?.data?.id ||
-        response?.data?._id ||
-        response?.id ||
-        response?._id;
+      const response = await questionService.createQuestion({
+        title: title.trim(),
+        content: content.trim(),
+      });
+      const questionHash = response?.data?.questionHash;
 
-      setSuccessMessage("Your question has been posted successfully.");
       setTitle("");
       setContent("");
       setErrors({});
       setCoachResult(null);
 
-      if (createdId) {
-        navigate(`/questions/${createdId}`);
+      if (questionHash) {
+        // Detail page is T-16; until then return home with the new post listed.
+        navigate("/dashboard");
+      } else {
+        setSuccessMessage("Your question has been posted successfully.");
       }
     } catch (err) {
-      setStatusError(err.message || "Failed to post your question.");
+      setStatusError(getErrorMessage(err, "Failed to post your question."));
     } finally {
       setIsSubmitting(false);
     }
