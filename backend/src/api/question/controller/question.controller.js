@@ -5,7 +5,6 @@ import {
   getSingleQuestionService,
   searchQuestionsSemanticService,
   getSimilarQuestionsService,
-  createAnswerService,
 } from "../services/question.service.js";
 import {
   generateQuestionDraftCoachService,
@@ -163,21 +162,3 @@ export const assessAnswerAgainstQuestionController = async (req, res, next) => {
   }
 };
 // T-18 end here
-
-export const createAnswerController = async (req, res, next) => {
-  try {
-    const data = await createAnswerService({
-      questionHash: req.params.questionHash,
-      userId: req.user?.id,
-      content: req.body.content,
-    });
-
-    res.status(StatusCodes.CREATED).json({
-      success: true,
-      message: "Answer posted successfully.",
-      data,
-    });
-  } catch (error) {
-    next(error);
-  }
-};

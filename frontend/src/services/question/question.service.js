@@ -42,11 +42,4 @@ export const questionService = {
     );
     return response.data;
   },
-  async createAnswer(questionHash, content) {
-    const response = await apiClient.post(
-      `/api/questions/${questionHash}/answers`,
-      { content },
-    );
-    return response.data;
-  },
 };
