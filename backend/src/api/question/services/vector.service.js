@@ -5,16 +5,34 @@ import { ServiceUnavailableError } from "../../../utils/errors/index.js";
 const GEMINI_EMBEDDING_MODEL =
   process.env.GEMINI_EMBEDDING_MODEL || "gemini-embedding-001";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
 const RECOMMEND_THRESHOLD = Number(process.env.RECOMMEND_THRESHOLD) || 0.75;
 const RECOMMEND_K = Number(process.env.RECOMMEND_K) || 5;
 
-if (!GEMINI_API_KEY) {
-  throw new Error("GEMINI_API_KEY environment variable is required");
+let ai;
+
+function getAi() {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new ServiceUnavailableError(
+      "AI search is unavailable because GEMINI_API_KEY is not configured.",
+    );
+  }
+  if (!ai) {
+    ai = new GoogleGenAI({ apiKey });
+  }
+  return ai;
 }
 
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+function resolveThreshold(threshold) {
+  if (threshold === undefined || threshold === null || threshold === "") {
+    return RECOMMEND_THRESHOLD;
+  }
+  const value = Number(threshold);
+  if (Number.isNaN(value)) {
+    return RECOMMEND_THRESHOLD;
+  }
+  return value;
+}
 
 /**
  * Utility to collapse consecutive whitespace characters into a single space
@@ -34,8 +52,10 @@ function normalizeWhitespace(value) {
  * @param {{title: string}} param - An object containing the question title.
  * @returns {string} The normalized question text.
  */
-export function normalizeQuestionText({ title }) {
-  return normalizeWhitespace(`${title || ""}`.normalize("NFKC").toLowerCase());
+export function normalizeQuestionText({ title, content = "" }) {
+  return normalizeWhitespace(
+    `${title || ""} ${content || ""}`.normalize("NFKC").toLowerCase(),
+  );
 }
 
 /**
@@ -92,7 +112,7 @@ export async function generateQuestionEmbedding(sourceText, options = {}) {
   const { taskType = "RETRIEVAL_DOCUMENT", questionId = null } = options;
 
   try {
-    const response = await ai.models.embedContent({
+    const response = await getAi().models.embedContent({
       model: GEMINI_EMBEDDING_MODEL,
       contents: sourceText,
       config: {
@@ -271,7 +291,7 @@ async function retrieveReadyEmbeddings() {
 export async function findSimilarQuestionsByText({ sourceText, threshold, k }) {
   // Normalize parameters
   const normalizedK = k || RECOMMEND_K;
-  const normalizedThreshold = threshold || RECOMMEND_THRESHOLD;
+  const normalizedThreshold = resolveThreshold(threshold);
   // Use RETRIEVAL_QUERY task type when searching against stored documents
   let embeddingResult;
   try {
@@ -279,6 +299,7 @@ export async function findSimilarQuestionsByText({ sourceText, threshold, k }) {
       taskType: "RETRIEVAL_QUERY",
     });
   } catch (error) {
+    if (error.statusCode) throw error;
     console.error("=== GEMINI API ERROR DURING SEARCH ===");
     console.error("Operation: findSimilarQuestionsByText");
     console.error("Search text:", sourceText);

@@ -1,14 +1,18 @@
 import dotenv from 'dotenv';
-dotenv.config();
+import path from 'path';
+import { fileURLToPath } from 'url';
 import mysql from 'mysql2/promise';
+
+const backendRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+dotenv.config({ path: path.join(backendRoot, '.env'), override: true });
 
 // Database connection pool
 export const db = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASS || '',
+  password: process.env.DB_PASS || process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'evangadi_forum',
-  port: process.env.DB_PORT,
+  port: Number(process.env.DB_PORT) || 3306,
 });
 
 const ensureParams = params => {
