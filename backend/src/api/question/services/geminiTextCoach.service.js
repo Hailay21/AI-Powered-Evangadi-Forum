@@ -2,23 +2,15 @@
 import { GoogleGenAI } from "@google/genai";
 import { ServiceUnavailableError } from "../../../utils/errors/index.js";
 
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_TEXT_MODEL =
-  process.env.GEMINI_TEXT_MODEL || "gemini-3.5-flash-lite";
+  process.env.GEMINI_TEXT_MODEL || "gemini-2.5-flash-lite";
 
-let ai;
-
-function getAi() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new ServiceUnavailableError(
-      "AI suggestions are unavailable because GEMINI_API_KEY is not configured.",
-    );
-  }
-  if (!ai) {
-    ai = new GoogleGenAI({ apiKey });
-  }
-  return ai;
+if (!GEMINI_API_KEY) {
+  throw new Error("GEMINI_API_KEY environment variable is required");
 }
+
+const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 // JSON response parser
 function parseJsonObjectFromGeminiText(raw) {
@@ -38,13 +30,15 @@ function parseJsonObjectFromGeminiText(raw) {
 // Gemini API request function
 
 async function fetchGeminiJsonTextResponse(userPrompt) {
-  const response = await getAi().models.generateContent({
+  const response = await ai.models.generateContent({
     model: GEMINI_TEXT_MODEL,
     contents: userPrompt,
     config: {
       maxOutputTokens: 300,
     },
   });
+
+  console.log(response);
 
   const text = response?.text;
   return typeof text === "string" ? text : "";
@@ -88,7 +82,6 @@ Rules:
     }
     return { tips };
   } catch (error) {
-    if (error.statusCode) throw error;
     console.error("generateQuestionDraftCoachService:", error);
     throw new ServiceUnavailableError(
       "AI draft suggestions are temporarily unavailable. Please try again later.",
@@ -142,7 +135,6 @@ Rules:
         : "Could not summarize fit; treat this as a partial match.";
     return { level, note };
   } catch (error) {
-    if (error.statusCode) throw error;
     console.error("assessAnswerAgainstQuestionService:", error);
     throw new ServiceUnavailableError(
       "AI fit check is temporarily unavailable. Please try again later.",
